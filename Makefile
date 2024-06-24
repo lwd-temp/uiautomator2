@@ -4,10 +4,17 @@ format:
 	poetry run isort . -m HANGING_INDENT -l 120
 
 test:
-	poetry run pytest -v tests
+	poetry run pytest -v mobile_tests/
 
 cov:
-	poetry run pytest -v tests/unittests --cov=. --cov-report xml --cov-report term
+	poetry run pytest -v tests/ \
+			--cov-config=.coveragerc \
+			--cov uiautomator2 \
+			--cov-report xml \
+			--cov-report term
+
+sync:
+	cd uiautomator2/assets; ./sync.sh; cd -
 
 build:
 	poetry self add "poetry-dynamic-versioning[plugin]"
@@ -20,3 +27,4 @@ init:
 		wget https://github.com/appium/appium/raw/master/packages/appium/sample-code/apps/ApiDemos-debug.apk; \
 	fi
 	poetry run python -m adbutils -i ./ApiDemos-debug.apk
+

@@ -7,20 +7,16 @@ import threading
 import time
 import typing
 from collections import OrderedDict
-from typing import Optional
-
-from logzero import setup_logger
+from typing import List, Optional
 
 import uiautomator2
-from uiautomator2.xpath import XPath
+from uiautomator2.xpath import PageSource, XPathEntry, XPathSelector
+from uiautomator2.utils import inject_call
 
-from .utils import inject_call
-
-logger = logging.getLogger("uiautomator2")
+logger = logging.getLogger(__name__)
 
 
 def _callback_click(el):
-    # print("callback", threading.current_thread())
     el.click()
 
 
@@ -95,7 +91,7 @@ class WatchContext:
             ok = True
             last_match = None
             for xpath in xpaths:
-                sel = self._d.xpath(xpath, source=source)
+                sel: XPathSelector = self._d.xpath(xpath, source=source)
                 if not sel.exists:
                     ok = False
                     break
@@ -155,20 +151,8 @@ class Watcher():
         self._watching = False  # func start is calling
         self._triggering = False
 
-        self.logger = setup_logger()
-        self.logger.setLevel(logging.INFO)
-
     @property
-    def debug(self):
-        return self.logger.level == logging.DEBUG
-
-    @debug.setter
-    def debug(self, v: bool):
-        assert isinstance(v, bool)
-        self.logger.setLevel(logging.DEBUG if v else logging.INFO)
-
-    @property
-    def _xpath(self) -> XPath:
+    def _xpath(self) -> XPathEntry:
         return self._d.xpath
 
     def _dump_hierarchy(self):
@@ -180,7 +164,7 @@ class Watcher():
     def start(self, interval: float = 2.0):
         """ stop watcher """
         if self._watching:
-            self.logger.warning("already started")
+            logger.warning("already started")
             return
         self._watching = True
         th = threading.Thread(name="watcher",
@@ -193,7 +177,7 @@ class Watcher():
     def stop(self):
         """ stop watcher """
         if not self._watching:
-            self.logger.warning("watch already stopped")
+            logger.warning("watch already stopped")
             return
 
         if self._watch_stopped.is_set():
@@ -229,7 +213,7 @@ class Watcher():
         finally:
             self._watch_stop_event.set()
 
-    def run(self, source: Optional[str] = None):
+    def run(self, source: Optional[PageSource] = None):
         """ run watchers
         Args:
             source: hierarchy content
@@ -239,7 +223,7 @@ class Watcher():
         try:
             return self._run_watchers(source=source)
         except Exception as e:
-            self.logger.warning("_run_watchers exception: %s", e)
+            logger.warning("_run_watchers exception: %s", e)
             return False
 
     def _run_watchers(self, source=None) -> bool:
@@ -247,7 +231,7 @@ class Watcher():
         Returns:
             bool (watched or not)
         """
-        source = source or self._dump_hierarchy()
+        source = source or self._xpath.get_page_source()
 
         for h in self._watchers:
             last_selector = None
@@ -258,7 +242,7 @@ class Watcher():
                     break
 
             if last_selector:
-                self.logger.info("XPath(hook:%s): %s", h['name'], h['xpaths'])
+                logger.info("XPath(hook:%s): %s", h['name'], h['xpaths'])
                 self._triggering = True
                 cb = h['callback']
                 defaults = {
@@ -276,7 +260,7 @@ class Watcher():
                 try:
                     cb(*ba.args, **ba.kwargs)
                 except Exception as e:
-                    self.logger.warning("watchers exception: %s", e)
+                    logger.warning("watchers exception: %s", e)
                 finally:
                     self._triggering = False
                 return True
@@ -292,7 +276,7 @@ class Watcher():
             return
         for w in self._watchers[:]:
             if w['name'] == name:
-                self.logger.debug("remove(%s) %s", name, w['xpaths'])
+                logger.debug("remove(%s) %s", name, w['xpaths'])
                 self._watchers.remove(w)
 
 
@@ -300,13 +284,13 @@ class XPathWatcher():
     def __init__(self, parent: Watcher, xpath: str, name: str = ''):
         self._name = name
         self._parent = parent
-        self._xpath_list = [xpath] if xpath else []
+        self._xpath_list: List[str] = [xpath] if xpath else []
 
-    def when(self, xpath=None):
+    def when(self, xpath: str = None):
         self._xpath_list.append(xpath)
         return self
 
-    def call(self, func):
+    def call(self, func: callable):
         """
         func accept argument, key(d, el)
         d=self._d, el=element
@@ -318,7 +302,7 @@ class XPathWatcher():
         })
 
     def click(self):
-        def _inner_click(selector):
+        def _inner_click(selector: XPathSelector):
             selector.get_last_match().click()
 
         self.call(_inner_click)

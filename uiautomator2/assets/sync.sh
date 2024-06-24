@@ -3,26 +3,35 @@
 
 set -e
 
-APK_VERSION="2.3.3"
-
+APK_VERSION=$(cat ../version.py| grep apk_version | awk '{print $NF}')
+APK_VERSION=${APK_VERSION//[\"\']}
 
 cd "$(dirname $0)"
 
-#if test -f apk_version.txt -a "$APK_VERSION" = "$(cat apk_version.txt)"
-#then
-#	echo "apk version $APK_VERSION, already downloaded, exit"
-#	exit
-#fi
+# function download_atx_agent() {
+# 	VERSION=$1
+# 	NAME="tmp-atx-agent.tar.gz"
+# 	URL="https://github.com/openatx/atx-agent/releases/download/$VERSION/atx-agent_${VERSION}_linux_armv6.tar.gz"
+# 	echo "$URL"
+# 	curl -L "$URL" --output "$NAME"
+# 	tar -xzvf "$NAME" atx-agent
+# 	rm -f "$NAME"
+# }
 
-function download(){
+function download_apk(){
 	VERSION=$1
 	NAME=$2
 	URL="https://github.com/openatx/android-uiautomator-server/releases/download/$VERSION/$NAME"
-	echo "$URL"
+	echo ">> download $URL -> $NAME"
 	curl -L "$URL" --output "$NAME"
+	unzip -tq "$NAME"
 }
 
-download "$APK_VERSION" "app-uiautomator.apk"
-download "$APK_VERSION" "app-uiautomator-test.apk"
+# download_atx_agent "$AGENT_VERSION"
+# echo "atx_agent_version: $AGENT_VERSION" >> version.txt
 
-unzip -tq app-uiautomator.apk && echo "$APK_VERSION" > apk_version.txt
+echo "APK_VERSION: $APK_VERSION"
+
+download_apk "$APK_VERSION" "app-uiautomator.apk"
+download_apk "$APK_VERSION" "app-uiautomator-test.apk"
+echo "apk_version: $APK_VERSION" > version.txt

@@ -1,27 +1,20 @@
 [tool.poetry]
 name = "uiautomator2"
 version = "0.0.0"
-description = "automator for anroid device"
+description = "uiautomator for android device"
 homepage = "https://github.com/openatx/uiautomator2"
 authors = ["codeskyblue <codeskyblue@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-include = ["*/assets/*.apk"]
+include = ["*/assets/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "*"
 lxml = "*"
-adbutils = ">=2.2"
+adbutils = "^2.5.0"
 retry = ">=0,<1"
-packaging = ">=20.3"
-
-# TODO: remove later
-Deprecated = "*"
-logzero = "*"
-filelock = ">=3,<4"
-progress = "^1.6"
-pillow = "*"
+Pillow = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"

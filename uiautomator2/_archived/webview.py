@@ -2,17 +2,16 @@
 #
 # Not implemented yet.
 #
-
-import contextlib
 import json
+import logging
 import string
 from pprint import pprint
 
 import adbutils
 import pychrome
 import requests
-from logzero import logger
 
+logger = logging.getLogger(__name__)
 
 class WebviewDriver():
     def __init__(self, url):
@@ -191,7 +190,7 @@ def runtest():
 
     d = u2.connect_usb()
     pprint(d.request_agent("/webviews").json())
-    port = d._adb_device.forward_port("localabstract:chrome_devtools_remote")
+    port = d.adb_device.forward_port("localabstract:chrome_devtools_remote")
     wd = WebviewDriver(f"http://localhost:{port}")
     tabs = wd.get_active_tab_list()
     pprint(tabs)
@@ -207,9 +206,9 @@ def main():
     import uiautomator2 as u2
 
     d = u2.connect_usb()
-    assert d._adb_device, "must connect with usb"
+    assert d.adb_device, "must connect with usb"
     for socket_path in d.request_agent("/webviews").json():
-        port = d._adb_device.forward_port("localabstract:"+socket_path)
+        port = d.adb_device.forward_port("localabstract:"+socket_path)
         data = requests.get(f"http://localhost:{port}/json/version").json()
         import pprint
         pprint.pprint(data)

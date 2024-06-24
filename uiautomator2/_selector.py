@@ -1,14 +1,15 @@
 import logging
 import time
 import warnings
+from typing import Optional
 
 import requests
 from PIL import Image
 from retry import retry
 
-from ._proto import SCROLL_STEPS
-from .exceptions import UiObjectNotFoundError
-from .utils import Exists, intersect
+from uiautomator2._proto import SCROLL_STEPS
+from uiautomator2.exceptions import UiObjectNotFoundError
+from uiautomator2.utils import Exists, intersect
 
 
 class Selector(dict):
@@ -128,8 +129,8 @@ class UiObject(object):
         '''ui object info.'''
         return self.jsonrpc.objInfo(self.selector)
     
-    def screenshot(self) -> Image.Image:
-        im = self.session.screenshot()
+    def screenshot(self, display_id: Optional[int] = None) -> Image.Image:
+        im = self.session.screenshot(display_id=display_id)
         return im.crop(self.bounds())
 
     def click(self, timeout=None, offset=None):
